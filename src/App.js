@@ -1,7 +1,9 @@
 import React, { useState } from 'react';
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import Header from './components/Header';
 import Main from './components/Main';
 import GradientBackground from './components/GradientBackground';
+import Exchanges from './components/Exchanges';
 
 function App() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -9,8 +11,9 @@ function App() {
   const [darkMode, setDarkMode] = useState(false);
 
   const navigation = [
+    { name: 'Home', href: '/' },
     { name: 'About', href: '#' },
-    { name: 'Exchanges', href: '#' },
+    { name: 'Exchanges', href: '/exchanges' },
     { name: 'News', href: '#' },
   ];
 
@@ -19,18 +22,28 @@ function App() {
   };
 
   return (
-    <div className={darkMode ? 'dark' : ''}>
-      <GradientBackground />
-      <Header
-        navigation={navigation}
-        mobileMenuOpen={mobileMenuOpen}
-        setMobileMenuOpen={setMobileMenuOpen}
-        resetToFirstPage={resetToFirstPage}
-        darkMode={darkMode}
-        setDarkMode={setDarkMode}
-      />
-      <Main currentPage={currentPage} setCurrentPage={setCurrentPage} />
-    </div>
+    <Router>
+      <div className={darkMode ? 'dark' : ''}>
+        <GradientBackground />
+        <Header
+          navigation={navigation}
+          mobileMenuOpen={mobileMenuOpen}
+          setMobileMenuOpen={setMobileMenuOpen}
+          resetToFirstPage={resetToFirstPage}
+          darkMode={darkMode}
+          setDarkMode={setDarkMode}
+        />
+        <Routes>
+          <Route
+            path='/'
+            element={
+              <Main currentPage={currentPage} setCurrentPage={setCurrentPage} />
+            }
+          />
+          <Route path='/exchanges' element={<Exchanges />} />
+        </Routes>
+      </div>
+    </Router>
   );
 }
 
