@@ -1,5 +1,5 @@
 import React from 'react';
-import { useState } from 'react';
+import { useDarkMode } from '../context/DarkModeContext';
 import { Dialog, DialogPanel } from '@headlessui/react';
 import {
   Bars3Icon,
@@ -13,9 +13,9 @@ const Header = ({
   mobileMenuOpen,
   setMobileMenuOpen,
   resetToFirstPage,
-  darkMode,
-  setDarkMode,
 }) => {
+  const { darkMode, setDarkMode } = useDarkMode();
+
   return (
     <header className='absolute inset-x-0 top-0 z-50'>
       <nav
