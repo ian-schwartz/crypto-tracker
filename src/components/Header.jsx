@@ -8,12 +8,7 @@ import {
   SunIcon,
 } from '@heroicons/react/24/outline';
 
-const Header = ({
-  navigation,
-  mobileMenuOpen,
-  setMobileMenuOpen,
-  resetToFirstPage,
-}) => {
+const Header = ({ navigation, mobileMenuOpen, setMobileMenuOpen }) => {
   const { darkMode, setDarkMode } = useDarkMode();
 
   return (
@@ -23,16 +18,7 @@ const Header = ({
         className='flex items-center justify-between p-6 lg:px-8'
       >
         <div className='flex lg:flex-1'>
-          <a
-            href='#'
-            onClick={(e) => {
-              e.preventDefault();
-              resetToFirstPage();
-            }}
-            className='-m-1.5 p-1.5'
-          >
-            <span className='text-xl font-bold'>CryptoTracker</span>
-          </a>
+          <span className='text-xl font-bold'>CryptoTracker</span>
         </div>
         <div className='flex lg:hidden'>
           <button

@@ -18,10 +18,6 @@ function App() {
     { name: 'News', href: '#' },
   ];
 
-  const resetToFirstPage = () => {
-    setCurrentPage(1);
-  };
-
   return (
     <DarkModeProvider>
       <Router>
@@ -31,7 +27,6 @@ function App() {
             navigation={navigation}
             mobileMenuOpen={mobileMenuOpen}
             setMobileMenuOpen={setMobileMenuOpen}
-            resetToFirstPage={resetToFirstPage}
             darkMode={darkMode}
             setDarkMode={setDarkMode}
           />
