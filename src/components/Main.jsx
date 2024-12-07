@@ -10,8 +10,8 @@ const Main = ({ currentPage, setCurrentPage }) => {
   const [loading, setLoading] = useState(true);
   const [marketSummary, setMarketSummary] = useState({});
 
-  const ITEMS_PER_PAGE = 30;
-  const TOTAL_ITEMS = 120;
+  const ITEMS_PER_PAGE = 32;
+  const TOTAL_ITEMS = 96;
 
   const fetchMarketSummary = async () => {
     try {
