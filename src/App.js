@@ -5,6 +5,7 @@ import Header from './components/Header';
 import Main from './components/Main';
 import GradientBackground from './components/GradientBackground';
 import Exchanges from './components/Exchanges';
+import About from './components/About';
 
 function App() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -13,9 +14,8 @@ function App() {
 
   const navigation = [
     { name: 'Home', href: '/' },
-    { name: 'About', href: '#' },
+    { name: 'About', href: '/about' },
     { name: 'Exchanges', href: '/exchanges' },
-    { name: 'News', href: '#' },
   ];
 
   return (
@@ -41,6 +41,7 @@ function App() {
               }
             />
             <Route path='/exchanges' element={<Exchanges />} />
+            <Route path='/about' element={<About />} />
           </Routes>
         </div>
       </Router>
