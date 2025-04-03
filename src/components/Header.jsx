@@ -18,13 +18,13 @@ const Header = ({ navigation, mobileMenuOpen, setMobileMenuOpen }) => {
         className='flex items-center justify-between p-6 lg:px-8'
       >
         <div className='flex lg:flex-1'>
-          <span className='text-xl font-bold'>CryptoTracker</span>
+          <span className='text-xl font-bold dark:text-white'>CryptoTracker</span>
         </div>
         <div className='flex lg:hidden'>
           <button
             type='button'
             onClick={() => setMobileMenuOpen(true)}
-            className='-m-2.5 inline-flex items-center justify-center rounded-md p-2.5 text-gray-700'
+            className='-m-2.5 inline-flex items-center justify-center rounded-md p-2.5 text-gray-700 dark:text-white'
           >
             <span className='sr-only'>Open main menu</span>
             <Bars3Icon aria-hidden='true' className='size-6' />
@@ -35,7 +35,7 @@ const Header = ({ navigation, mobileMenuOpen, setMobileMenuOpen }) => {
             <a
               key={item.name}
               href={item.href}
-              className='text-sm font-semibold text-gray-900 hover:text-indigo-500'
+              className='text-sm font-semibold text-gray-900 hover:text-indigo-500 dark:text-white dark:hover:text-indigo-300'
             >
               {item.name}
             </a>
@@ -66,7 +66,7 @@ const Header = ({ navigation, mobileMenuOpen, setMobileMenuOpen }) => {
             <button
               type='button'
               onClick={() => setMobileMenuOpen(false)}
-              className='-m-2.5 rounded-md p-2.5 text-gray-700'
+              className='-m-2.5 rounded-md p-2.5 text-gray-700 dark:text-white'
             >
               <span className='sr-only'>Close menu</span>
               <XMarkIcon aria-hidden='true' className='size-6' />

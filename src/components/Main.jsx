@@ -104,7 +104,7 @@ const Main = ({ currentPage, setCurrentPage }) => {
   if (loading) {
     return (
       <div className='flex justify-center items-center h-screen'>
-        <p>Loading...</p>
+        <p className='dark:text-white'>Loading...</p>
       </div>
     );
   }
