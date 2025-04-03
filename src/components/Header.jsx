@@ -56,7 +56,7 @@ const Header = ({ navigation, mobileMenuOpen, setMobileMenuOpen }) => {
       </nav>
       <Dialog open={mobileMenuOpen} onClose={setMobileMenuOpen}>
         <div className='fixed inset-0 z-50' />
-        <DialogPanel className='fixed inset-y-0 right-0 z-50 w-full overflow-y-auto bg-white px-6 py-6 sm:max-w-sm sm:ring-1 sm:ring-gray-900/10'>
+        <DialogPanel className='fixed inset-y-0 right-0 z-50 w-full overflow-y-auto bg-white px-6 py-6 sm:max-w-sm sm:ring-1 sm:ring-gray-900/10 dark:bg-gray-900 dark:sm:ring-white/10'>
           <div className='flex items-center justify-between'>
             <a href='#' className='-m-1.5 p-1.5'>
               <span className='text-lg font-bold text-gray-900 dark:text-white'>
@@ -79,13 +79,35 @@ const Header = ({ navigation, mobileMenuOpen, setMobileMenuOpen }) => {
                   <a
                     key={item.name}
                     href={item.href}
-                    className='-mx-3 block rounded-lg px-3 py-2 text-base font-semibold text-gray-900 hover:text-indigo-500'
+                    className='-mx-3 block rounded-lg px-3 py-2 text-base font-semibold text-gray-900 hover:text-indigo-500 dark:text-white'
                   >
                     {item.name}
                   </a>
                 ))}
               </div>
             </div>
+          </div>
+          <div className='py-6 border-t border-gray-200 dark:border-gray-700'>
+            <button
+              onClick={() => setDarkMode(!darkMode)}
+              className='w-full flex items-center gap-2 justify-center p-2 rounded-md bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600'
+            >
+              {darkMode ? (
+                <>
+                  <SunIcon className='h-5 w-5 text-gray-900 dark:text-gray-300' />
+                  <span className='text-sm font-medium text-gray-900 dark:text-white'>
+                    Light Mode
+                  </span>
+                </>
+              ) : (
+                <>
+                  <MoonIcon className='h-5 w-5 text-gray-900 dark:text-gray-300' />
+                  <span className='text-sm font-medium text-gray-900 dark:text-white'>
+                    Dark Mode
+                  </span>
+                </>
+              )}
+            </button>
           </div>
         </DialogPanel>
       </Dialog>
