@@ -6,6 +6,7 @@ import Main from './components/Main';
 import GradientBackground from './components/GradientBackground';
 import Exchanges from './components/Exchanges';
 import About from './components/About';
+import CryptoDetail from './components/CryptoDetail';
 
 function App() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -42,6 +43,7 @@ function App() {
             />
             <Route path='/exchanges' element={<Exchanges />} />
             <Route path='/about' element={<About />} />
+            <Route path='/crypto/:id' element={<CryptoDetail />} />
           </Routes>
         </div>
       </Router>

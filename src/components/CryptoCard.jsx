@@ -1,4 +1,5 @@
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
 
 const formatPrice = (price) => {
   const formatter = new Intl.NumberFormat('en-US', {
@@ -12,10 +13,20 @@ const formatPrice = (price) => {
 };
 
 const CryptoCard = ({ crypto, livePrice }) => {
+  const navigate = useNavigate();
   const percentChange = crypto.price_change_percentage_24h;
 
+  const handleClick = () => {
+    console.log('Crypto data being passed:', crypto);
+    console.log('Navigating to:', `/crypto/${crypto.id}`);
+    navigate(`/crypto/${crypto.id}`);
+  };
+
   return (
-    <div className='p-6 rounded-lg shadow-sm bg-white dark:bg-gray-800 border dark:border-gray-700 hover:shadow-lg transition-shadow'>
+    <div 
+      className='p-6 rounded-lg shadow-sm bg-white dark:bg-gray-800 border dark:border-gray-700 hover:shadow-lg transition-shadow cursor-pointer'
+      onClick={handleClick}
+    >
       <img
         src={crypto.image}
         alt={crypto.name}
