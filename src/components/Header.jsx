@@ -1,6 +1,7 @@
 import React from 'react';
 import { useDarkMode } from '../context/DarkModeContext';
 import { Dialog, DialogPanel } from '@headlessui/react';
+import { Link } from 'react-router-dom';
 import {
   Bars3Icon,
   XMarkIcon,
@@ -18,7 +19,9 @@ const Header = ({ navigation, mobileMenuOpen, setMobileMenuOpen }) => {
         className='flex items-center justify-between p-6 lg:px-8'
       >
         <div className='flex lg:flex-1'>
-          <span className='text-xl font-bold dark:text-white'>CryptoTracker</span>
+          <Link to="/" className='text-xl font-bold dark:text-white hover:text-indigo-500 dark:hover:text-indigo-300 transition-colors'>
+            CryptoTracker
+          </Link>
         </div>
         <div className='flex lg:hidden'>
           <button
@@ -58,11 +61,11 @@ const Header = ({ navigation, mobileMenuOpen, setMobileMenuOpen }) => {
         <div className='fixed inset-0 z-50' />
         <DialogPanel className='fixed inset-y-0 right-0 z-50 w-full overflow-y-auto bg-white px-6 py-6 sm:max-w-sm sm:ring-1 sm:ring-gray-900/10 dark:bg-gray-900 dark:sm:ring-white/10'>
           <div className='flex items-center justify-between'>
-            <a href='#' className='-m-1.5 p-1.5'>
-              <span className='text-lg font-bold text-gray-900 dark:text-white'>
+            <Link to="/" className='-m-1.5 p-1.5'>
+              <span className='text-lg font-bold text-gray-900 dark:text-white hover:text-indigo-500 dark:hover:text-indigo-300 transition-colors'>
                 CryptoTracker
               </span>
-            </a>
+            </Link>
             <button
               type='button'
               onClick={() => setMobileMenuOpen(false)}
