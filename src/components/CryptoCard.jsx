@@ -17,8 +17,6 @@ const CryptoCard = ({ crypto, livePrice }) => {
   const percentChange = crypto.price_change_percentage_24h;
 
   const handleClick = () => {
-    console.log('Crypto data being passed:', crypto);
-    console.log('Navigating to:', `/crypto/${crypto.id}`);
     navigate(`/crypto/${crypto.id}`);
   };
 

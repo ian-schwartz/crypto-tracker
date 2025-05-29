@@ -72,13 +72,15 @@ const Portfolio = () => {
 
   }, [holdings, currentPrices]); // Depend on holdings and currentPrices
 
-  // Effect to fetch current prices for holdings
-  useEffect(() => {
-    if (holdings.length > 0) {
-      setIsLoadingPrices(true);
-      setPriceFetchError(null);
-      const ids = holdings.map(holding => holding.id).join(',');
-      axios.get(
+  // Function to fetch current prices for holdings
+  const fetchCurrentPortfolioData = async () => {
+    if (holdings.length === 0) return; // Don't fetch if no holdings
+
+    setIsLoadingPrices(true);
+    setPriceFetchError(null);
+    const ids = holdings.map(holding => holding.id).join(',');
+    try {
+      const response = await axios.get(
         `https://api.coingecko.com/api/v3/coins/markets`,
         {
           params: {
@@ -87,26 +89,26 @@ const Portfolio = () => {
             price_change_percentage: '24h'
           }
         }
-      )
-      .then(response => {
-        const prices = response.data.reduce((acc, coin) => {
-          acc[coin.id] = { usd: coin.current_price, price_change_percentage_24h: coin.price_change_percentage_24h };
-          return acc;
-        }, {});
-        setCurrentPrices(prices);
-        setIsLoadingPrices(false);
-      })
-      .catch(error => {
-        console.error('Error fetching current prices:', error);
-        setPriceFetchError('Failed to fetch current prices.');
-        setIsLoadingPrices(false);
-        setCurrentPrices({}); // Clear prices on error to indicate data might be stale
-      });
-    } else {
-      setCurrentPrices({}); // Clear prices if holdings are empty
-      setPortfolio24hChange(null); // Reset 24h change
+      );
+      const prices = response.data.reduce((acc, coin) => {
+        acc[coin.id] = { usd: coin.current_price, price_change_percentage_24h: coin.price_change_percentage_24h };
+        return acc;
+      }, {});
+      setCurrentPrices(prices);
+    } catch (error) {
+      console.error('Error fetching current prices:', error);
+      setPriceFetchError('Failed to fetch current prices.');
+      setCurrentPrices({}); // Clear prices on error to indicate data might be stale
+    } finally {
+      setIsLoadingPrices(false);
     }
+  };
+
+  // Effect to trigger initial data fetch when holdings change
+  useEffect(() => {
+    fetchCurrentPortfolioData();
   }, [holdings]); // Depend on holdings to refetch when portfolio changes
+
 
   const handleAddCrypto = (newHolding) => {
     setHoldings([...holdings, newHolding]);
@@ -144,136 +146,146 @@ const Portfolio = () => {
   };
 
   return (
-    <div className="container mx-auto px-4 py-24">
-      <div className="flex justify-center mb-8">
-        <div className="text-center">
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
-            Total Value
-          </h1>
-          <p className="text-4xl font-bold text-blue-500 mb-4">
-            ${totalValue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-            {isLoadingPrices && <span className="text-sm text-gray-500 dark:text-gray-400 ml-2">Loading prices...</span>}
-            {priceFetchError && <span className="text-sm text-red-500 dark:text-red-400 ml-2">{priceFetchError}</span>}
-          </p>
-          {portfolio24hChange !== null && ( // Display 24h change if available
-            <p className={`text-lg font-semibold ${portfolio24hChange >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
-              24h Change: {portfolio24hChange >= 0 ? '+' : ''}{portfolio24hChange.toFixed(2)}%
-            </p>
+    <div>
+      <div className="container mx-auto px-4 py-24">
+        <div className="flex justify-center mb-8 pt-0">
+          <div className="text-center">
+            <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
+              Total Value
+            </h1>
+            <div className="flex items-center justify-center gap-2">
+              <p className="text-4xl font-bold text-blue-500">
+                ${totalValue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+              </p>
+              {isLoadingPrices && (
+                <div className="animate-spin rounded-full h-4 w-4 border-t-2 border-b-2 border-blue-500"></div>
+              )}
+            </div>
+            {portfolio24hChange !== null && (
+              <p className={`text-lg font-semibold ${portfolio24hChange >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
+                24h Change: {portfolio24hChange >= 0 ? '+' : ''}{portfolio24hChange.toFixed(2)}%
+              </p>
+            )}
+            {priceFetchError && (
+              <p className="text-sm text-red-500 dark:text-red-400 mt-2">{priceFetchError}</p>
+            )}
+          </div>
+        </div>
+
+        <div className="pt-8">
+          {holdings.length === 0 ? (
+            <div className="text-center py-12">
+              <p className="text-gray-500 dark:text-gray-400 mb-4">
+                Your portfolio is empty. Add some cryptocurrencies to get started!
+              </p>
+              <button
+                onClick={() => setIsModalOpen(true)}
+                className="bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600 transition-colors"
+              >
+                Add Cryptocurrency
+              </button>
+            </div>
+          ) : (
+            <div className="bg-white dark:bg-gray-800 rounded-lg shadow overflow-hidden">
+              <div className="p-4 border-b border-gray-200 dark:border-gray-700">
+                <button
+                  onClick={() => setIsModalOpen(true)}
+                  className="bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600 transition-colors"
+                >
+                  Add Cryptocurrency
+                </button>
+              </div>
+              <div className="overflow-x-auto">
+                <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                  <thead className="bg-gray-50 dark:bg-gray-700">
+                    <tr>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                        Asset
+                      </th>
+                      <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                        Amount
+                      </th>
+                       <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                        Current Price
+                      </th>
+                      <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                        Purchase Date
+                      </th>
+                       <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                        P/L (USD)
+                      </th>
+                       <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                        P/L (%)
+                      </th>
+                      <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                        Actions
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+                    {holdings.map((holding) => {
+                      const currentPriceData = currentPrices[holding.id];
+                      const currentPrice = currentPriceData?.usd;
+                      const profitLoss = calculateProfitLoss(holding);
+
+                      return (
+                        <tr key={holding.id}>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <div className="flex items-center">
+                              <img
+                                src={holding.image}
+                                alt={holding.name}
+                                className="h-8 w-8 rounded-full mr-3"
+                              />
+                              <div>
+                                <div className="text-sm font-medium text-gray-900 dark:text-white">
+                                  {holding.name}
+                                </div>
+                                <div className="text-sm text-gray-500 dark:text-gray-400">
+                                  {holding.symbol.toUpperCase()}
+                                </div>
+                              </div>
+                            </div>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-right text-sm text-gray-900 dark:text-white">
+                            {holding.amount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 8 })}
+                          </td>
+                           <td className="px-6 py-4 whitespace-nowrap text-right text-sm text-gray-900 dark:text-white">
+                            {currentPrice ? `$${currentPrice.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : 'Loading...'}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-right text-sm text-gray-500 dark:text-gray-400">
+                            {holding.purchaseDate ? formatDate(holding.purchaseDate) : 'N/A'}
+                          </td>
+                           <td className={`px-6 py-4 whitespace-nowrap text-right text-sm ${profitLoss ? (profitLoss.amount >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400') : 'text-gray-500 dark:text-gray-400'}`}>
+                            {profitLoss ? `${profitLoss.amount >= 0 ? '+' : '-'}$${Math.abs(profitLoss.amount).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : '---'}
+                          </td>
+                           <td className={`px-6 py-4 whitespace-nowrap text-right text-sm ${profitLoss ? (profitLoss.percentage >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400') : 'text-gray-500 dark:text-gray-400'}`}>
+                            {profitLoss ? `${profitLoss.percentage >= 0 ? '+' : ''}${profitLoss.percentage.toFixed(2)}%` : '---'}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-right text-sm">
+                            <button
+                              onClick={() => handleRemoveCrypto(holding.id, holding.name)}
+                              className="text-red-500 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300"
+                            >
+                              Remove
+                            </button>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            </div>
           )}
         </div>
+
+        <AddCryptoModal
+          isOpen={isModalOpen}
+          onClose={() => setIsModalOpen(false)}
+          onAdd={handleAddCrypto}
+        />
       </div>
-
-      {holdings.length === 0 ? (
-        <div className="text-center py-12">
-          <p className="text-gray-500 dark:text-gray-400 mb-4">
-            Your portfolio is empty. Add some cryptocurrencies to get started!
-          </p>
-          <button
-            onClick={() => setIsModalOpen(true)}
-            className="bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600 transition-colors"
-          >
-            Add Cryptocurrency
-          </button>
-        </div>
-      ) : (
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow overflow-hidden">
-          <div className="p-4 border-b border-gray-200 dark:border-gray-700">
-            <button
-              onClick={() => setIsModalOpen(true)}
-              className="bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600 transition-colors"
-            >
-              Add Cryptocurrency
-            </button>
-          </div>
-          <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-              <thead className="bg-gray-50 dark:bg-gray-700">
-                <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                    Asset
-                  </th>
-                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                    Amount
-                  </th>
-                   <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                    Current Price
-                  </th>
-                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                    Purchase Date
-                  </th>
-                   <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                    P/L (USD)
-                  </th>
-                   <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                    P/L (%)
-                  </th>
-                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                    Actions
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
-                {holdings.map((holding) => {
-                  const currentPriceData = currentPrices[holding.id];
-                  const currentPrice = currentPriceData?.usd;
-                  const profitLoss = calculateProfitLoss(holding);
-
-                  return (
-                    <tr key={holding.id}>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="flex items-center">
-                          <img
-                            src={holding.image}
-                            alt={holding.name}
-                            className="h-8 w-8 rounded-full mr-3"
-                          />
-                          <div>
-                            <div className="text-sm font-medium text-gray-900 dark:text-white">
-                              {holding.name}
-                            </div>
-                            <div className="text-sm text-gray-500 dark:text-gray-400">
-                              {holding.symbol.toUpperCase()}
-                            </div>
-                          </div>
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-right text-sm text-gray-900 dark:text-white">
-                        {holding.amount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 8 })}
-                      </td>
-                       <td className="px-6 py-4 whitespace-nowrap text-right text-sm text-gray-900 dark:text-white">
-                        {currentPrice ? `$${currentPrice.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : 'Loading...'}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-right text-sm text-gray-500 dark:text-gray-400">
-                        {holding.purchaseDate ? formatDate(holding.purchaseDate) : 'N/A'}
-                      </td>
-                       <td className={`px-6 py-4 whitespace-nowrap text-right text-sm ${profitLoss ? (profitLoss.amount >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400') : 'text-gray-500 dark:text-gray-400'}`}>
-                        {profitLoss ? `${profitLoss.amount >= 0 ? '+' : '-'}$${Math.abs(profitLoss.amount).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : '---'}
-                      </td>
-                       <td className={`px-6 py-4 whitespace-nowrap text-right text-sm ${profitLoss ? (profitLoss.percentage >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400') : 'text-gray-500 dark:text-gray-400'}`}>
-                        {profitLoss ? `${profitLoss.percentage >= 0 ? '+' : ''}${profitLoss.percentage.toFixed(2)}%` : '---'}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-right text-sm">
-                        <button
-                          onClick={() => handleRemoveCrypto(holding.id, holding.name)}
-                          className="text-red-500 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300"
-                        >
-                          Remove
-                        </button>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      )}
-
-      <AddCryptoModal
-        isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
-        onAdd={handleAddCrypto}
-      />
     </div>
   );
 };

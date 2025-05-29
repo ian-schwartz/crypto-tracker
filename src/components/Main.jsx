@@ -199,20 +199,25 @@ const Main = ({ currentPage, setCurrentPage }) => {
     );
   }
 
+  // Revert totalPages calculation to use TOTAL_ITEMS and ITEMS_PER_PAGE
+  const totalPages = Math.ceil(TOTAL_ITEMS / ITEMS_PER_PAGE);
+
   const handlePageChange = (direction) => {
-    setCurrentPage((prevPage) =>
-      direction === 'next' ? prevPage + 1 : prevPage - 1
-    );
+    if (direction === 'next' && currentPage < totalPages) {
+      setCurrentPage(currentPage + 1);
+    } else if (direction === 'prev' && currentPage > 1) {
+      setCurrentPage(currentPage - 1);
+    }
   };
 
   return (
-    <div className='container mx-auto px-6 py-24'>
-      <MarketSummary marketSummary={marketSummary} />
+    <div className="container mx-auto px-4 py-24">
+      <MarketSummary summary={marketSummary} />
       <CryptoList cryptos={cryptos} prices={prices} />
       <Pagination
         currentPage={currentPage}
+        totalPages={totalPages}
         handlePageChange={handlePageChange}
-        totalPages={TOTAL_ITEMS / ITEMS_PER_PAGE}
       />
     </div>
   );

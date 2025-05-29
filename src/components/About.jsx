@@ -1,6 +1,5 @@
 const About = () => (
   <div className='container mx-auto px-6 py-24'>
-    <h1 className='text-3xl font-bold text-center mb-8 dark:text-white'>About CryptoTracker</h1>
     <section className='mb-12'>
       <h2 className='text-xl font-semibold dark:text-white'>Why CryptoTracker?</h2>
       <p className='mt-4 text-gray-700 dark:text-gray-200'>

@@ -10,6 +10,10 @@ const formatNumber = (number) => {
 };
 
 const MarketSummary = ({ marketSummary }) => {
+  if (!marketSummary || !marketSummary.total_market_cap || !marketSummary.total_volume || !marketSummary.market_cap_percentage) {
+    return null;
+  }
+
   return (
     <div className='mb-6 p-6 bg-white dark:bg-gray-800 rounded-lg shadow-md'>
       <h2 className='text-2xl font-bold text-center text-gray-900 dark:text-white mb-4'>
@@ -19,19 +23,19 @@ const MarketSummary = ({ marketSummary }) => {
         <div className='text-center'>
           <p className='text-gray-600 dark:text-gray-400'>Total Market Cap</p>
           <p className='text-lg font-semibold text-green-500'>
-            {formatNumber(marketSummary.total_market_cap?.usd) || 'N/A'}
+            {formatNumber(marketSummary.total_market_cap.usd) || 'N/A'}
           </p>
         </div>
         <div className='text-center'>
           <p className='text-gray-600 dark:text-gray-400'>24h Volume</p>
           <p className='text-lg font-semibold text-indigo-500'>
-            {formatNumber(marketSummary.total_volume?.usd) || 'N/A'}
+            {formatNumber(marketSummary.total_volume.usd) || 'N/A'}
           </p>
         </div>
         <div className='text-center'>
           <p className='text-gray-600 dark:text-gray-400'>BTC Dominance</p>
           <p className='text-lg font-semibold text-yellow-500'>
-            {marketSummary.market_cap_percentage?.btc.toFixed(2) || 'N/A'}%
+            {marketSummary.market_cap_percentage.btc.toFixed(2) || 'N/A'}%
           </p>
         </div>
       </div>
