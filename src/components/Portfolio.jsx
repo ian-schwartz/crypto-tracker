@@ -2,19 +2,26 @@ import React, { useState, useEffect } from 'react';
 import AddCryptoModal from './AddCryptoModal';
 
 const Portfolio = () => {
-  const [holdings, setHoldings] = useState([]);
+  // Initialize state by trying to load from localStorage immediately
+  const [holdings, setHoldings] = useState(() => {
+    const savedHoldings = localStorage.getItem('portfolio');
+    if (savedHoldings) {
+      try {
+        const parsedHoldings = JSON.parse(savedHoldings);
+        return parsedHoldings;
+      } catch (error) {
+        console.error("Failed to parse portfolio data from localStorage during initialization:", error);
+        return []; // Return empty array if parsing fails
+      }
+    } else {
+      return []; // Return empty array if no data found
+    }
+  });
+
   const [totalValue, setTotalValue] = useState(0);
   const [isModalOpen, setIsModalOpen] = useState(false);
 
-  // Load portfolio data from localStorage on component mount
-  useEffect(() => {
-    const savedHoldings = localStorage.getItem('portfolio');
-    if (savedHoldings) {
-      setHoldings(JSON.parse(savedHoldings));
-    }
-  }, []);
-
-  // Save portfolio data to localStorage whenever it changes
+  // Use useEffect only for saving data when holdings change
   useEffect(() => {
     localStorage.setItem('portfolio', JSON.stringify(holdings));
     const newTotalValue = holdings.reduce((sum, holding) => sum + holding.value, 0);
@@ -25,8 +32,10 @@ const Portfolio = () => {
     setHoldings([...holdings, newHolding]);
   };
 
-  const handleRemoveCrypto = (id) => {
-    setHoldings(holdings.filter(holding => holding.id !== id));
+  const handleRemoveCrypto = (id, name) => {
+    if (window.confirm(`Are you sure you want to remove ${name} from your portfolio?`)) {
+      setHoldings(holdings.filter(holding => holding.id !== id));
+    }
   };
 
   const formatDate = (dateString) => {
@@ -85,7 +94,7 @@ const Portfolio = () => {
                   <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                     Value
                   </th>
-                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                     Purchase Date
                   </th>
                   <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
@@ -124,7 +133,7 @@ const Portfolio = () => {
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm">
                       <button
-                        onClick={() => handleRemoveCrypto(holding.id)}
+                        onClick={() => handleRemoveCrypto(holding.id, holding.name)}
                         className="text-red-500 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300"
                       >
                         Remove
