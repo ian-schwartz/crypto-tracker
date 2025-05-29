@@ -7,6 +7,7 @@ import GradientBackground from './components/GradientBackground';
 import Exchanges from './components/Exchanges';
 import About from './components/About';
 import CryptoDetail from './components/CryptoDetail';
+import Portfolio from './components/Portfolio';
 
 function App() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -15,8 +16,9 @@ function App() {
 
   const navigation = [
     { name: 'Home', href: '/' },
-    { name: 'About', href: '/about' },
+    { name: 'Portfolio', href: '/portfolio' },
     { name: 'Exchanges', href: '/exchanges' },
+    { name: 'About', href: '/about' },
   ];
 
   return (
@@ -41,6 +43,7 @@ function App() {
                 />
               }
             />
+            <Route path='/portfolio' element={<Portfolio />} />
             <Route path='/exchanges' element={<Exchanges />} />
             <Route path='/about' element={<About />} />
             <Route path='/crypto/:id' element={<CryptoDetail />} />
