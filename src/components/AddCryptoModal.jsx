@@ -15,7 +15,9 @@ const AddCryptoModal = ({ isOpen, onClose, onAdd }) => {
   const [currentPrice, setCurrentPrice] = useState(null);
   const [inputMode, setInputMode] = useState('crypto'); // 'crypto' or 'dollar'
   const [purchaseDate, setPurchaseDate] = useState(new Date());
+  const [manualPrice, setManualPrice] = useState('');
 
+  // Search effect
   useEffect(() => {
     const searchCryptos = async () => {
       if (searchTerm.length < 2) {
@@ -58,10 +60,11 @@ const AddCryptoModal = ({ isOpen, onClose, onAdd }) => {
     return () => clearTimeout(debounceTimer);
   }, [searchTerm, lastSearchTime]);
 
+  // Fetch current price when a crypto is selected
   useEffect(() => {
     const fetchCurrentPrice = async () => {
       if (!selectedCrypto) return;
-
+      
       try {
         const response = await axios.get(
           `https://api.coingecko.com/api/v3/simple/price`,
@@ -74,8 +77,10 @@ const AddCryptoModal = ({ isOpen, onClose, onAdd }) => {
         );
         const price = response.data[selectedCrypto.id].usd;
         setCurrentPrice(price);
+        // Set initial manual price to current price
+        setManualPrice(price.toString());
       } catch (error) {
-        console.error('Error fetching price:', error);
+        console.error('Error fetching current price:', error);
         setError('Failed to fetch current price');
       }
     };
@@ -96,9 +101,10 @@ const AddCryptoModal = ({ isOpen, onClose, onAdd }) => {
     }
 
     // Update dollar value if in crypto mode
-    if (inputMode === 'crypto' && currentPrice) {
+    if (inputMode === 'crypto' && manualPrice) {
       const cryptoAmount = parseFloat(cleanValue) || 0;
-      setDollarValue((cryptoAmount * currentPrice).toFixed(2));
+      const price = parseFloat(manualPrice) || 0;
+      setDollarValue((cryptoAmount * price).toFixed(2));
     }
   };
 
@@ -113,9 +119,36 @@ const AddCryptoModal = ({ isOpen, onClose, onAdd }) => {
     }
 
     // Update crypto amount if in dollar mode
-    if (inputMode === 'dollar' && currentPrice) {
+    if (inputMode === 'dollar' && manualPrice) {
       const dollarAmount = parseFloat(cleanValue) || 0;
-      setAmount((dollarAmount / currentPrice).toFixed(8));
+      const price = parseFloat(manualPrice) || 0;
+      setAmount((dollarAmount / price).toFixed(8));
+    }
+  };
+
+  const handleManualPriceChange = (e) => {
+    const value = e.target.value;
+    // Remove any non-numeric characters except decimal point
+    const cleanValue = value.replace(/[^0-9.]/g, '');
+    // Ensure only one decimal point
+    const parts = cleanValue.split('.');
+    if (parts.length > 2) {
+      setManualPrice(parts[0] + '.' + parts.slice(1).join(''));
+    } else {
+      setManualPrice(cleanValue);
+    }
+
+    // Update dollar value if in crypto mode
+    if (inputMode === 'crypto' && amount) {
+      const cryptoAmount = parseFloat(amount) || 0;
+      const price = parseFloat(cleanValue) || 0;
+      setDollarValue((cryptoAmount * price).toFixed(2));
+    }
+    // Update crypto amount if in dollar mode
+    else if (inputMode === 'dollar' && dollarValue) {
+      const dollarAmount = parseFloat(dollarValue) || 0;
+      const price = parseFloat(cleanValue) || 0;
+      setAmount((dollarAmount / price).toFixed(8));
     }
   };
 
@@ -129,14 +162,21 @@ const AddCryptoModal = ({ isOpen, onClose, onAdd }) => {
       return;
     }
 
+    const price = parseFloat(manualPrice);
+    if (isNaN(price) || price <= 0) {
+      setError('Please enter a valid price');
+      return;
+    }
+
     onAdd({
       id: selectedCrypto.id,
       name: selectedCrypto.name,
       symbol: selectedCrypto.symbol,
       image: selectedCrypto.thumb,
       amount: numericAmount,
-      value: numericAmount * currentPrice,
-      purchaseDate: purchaseDate.toISOString()
+      value: numericAmount * price,
+      purchaseDate: purchaseDate.toISOString(),
+      purchasePrice: price
     });
 
     // Reset form
@@ -146,6 +186,7 @@ const AddCryptoModal = ({ isOpen, onClose, onAdd }) => {
     setSelectedCrypto(null);
     setError(null);
     setPurchaseDate(new Date());
+    setManualPrice('');
     onClose();
   };
 
@@ -303,10 +344,34 @@ const AddCryptoModal = ({ isOpen, onClose, onAdd }) => {
                 <DatePicker
                   selected={purchaseDate}
                   onChange={date => setPurchaseDate(date)}
-                  maxDate={new Date()}
                   className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
                   dateFormat="MMMM d, yyyy"
+                  maxDate={new Date()}
                 />
+              </div>
+
+              <div className="mb-4">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  Purchase Price
+                </label>
+                <div className="relative">
+                  <input
+                    type="text"
+                    value={manualPrice}
+                    onChange={handleManualPriceChange}
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
+                    placeholder="Enter purchase price in USD..."
+                    required
+                  />
+                  <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
+                    <span className="text-gray-500 dark:text-gray-400">USD</span>
+                  </div>
+                </div>
+                {currentPrice && (
+                  <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">
+                    Current Price: ${currentPrice.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                  </p>
+                )}
               </div>
             </>
           )}

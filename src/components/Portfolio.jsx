@@ -130,11 +130,12 @@ const Portfolio = () => {
 
   const calculateProfitLoss = (holding) => {
     const currentPriceData = currentPrices[holding.id];
-    if (!currentPriceData) return null; // Cannot calculate without current price
+    if (!currentPriceData) return null;
 
     const currentPrice = currentPriceData.usd;
-    const purchaseValue = holding.value; // Value at purchase time
+    const purchasePrice = holding.purchasePrice; // Use the stored historical price
     const currentValue = holding.amount * currentPrice;
+    const purchaseValue = holding.amount * purchasePrice;
 
     const profitLoss = currentValue - purchaseValue;
     const percentageChange = (profitLoss / purchaseValue) * 100;
