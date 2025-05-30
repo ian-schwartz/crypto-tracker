@@ -15,7 +15,7 @@ function App() {
   const [darkMode, setDarkMode] = useState(false);
 
   const navigation = [
-    { name: 'Home', href: '/' },
+    { name: 'Market', href: '/' },
     { name: 'Portfolio', href: '/portfolio' },
     { name: 'Exchanges', href: '/exchanges' },
     { name: 'About', href: '/about' },
