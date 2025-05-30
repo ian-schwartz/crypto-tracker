@@ -1,6 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import AddCryptoModal from './AddCryptoModal';
+import EditCryptoModal from './EditCryptoModal';
 import axios from 'axios';
+
+const CACHE_DURATION = 60000; // Cache prices for 1 minute
+const RETRY_DELAY = 5000; // Wait 5 seconds between retries
+const MAX_RETRIES = 3;
 
 const Portfolio = () => {
   // Initialize state by trying to load from localStorage immediately
@@ -25,6 +30,10 @@ const Portfolio = () => {
   const [portfolio24hChange, setPortfolio24hChange] = useState(null); // State for total portfolio 24h change
   const [isLoadingPrices, setIsLoadingPrices] = useState(false); // Loading state for prices
   const [priceFetchError, setPriceFetchError] = useState(null); // Error state for price fetching
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [selectedHolding, setSelectedHolding] = useState(null);
+  const [lastFetchTime, setLastFetchTime] = useState(0);
+  const [retryCount, setRetryCount] = useState(0);
 
   // Save portfolio data to localStorage whenever it changes
   useEffect(() => {
@@ -74,11 +83,18 @@ const Portfolio = () => {
 
   // Function to fetch current prices for holdings
   const fetchCurrentPortfolioData = async () => {
-    if (holdings.length === 0) return; // Don't fetch if no holdings
+    if (holdings.length === 0) return;
+
+    // Check if we should use cached data
+    const now = Date.now();
+    if (now - lastFetchTime < CACHE_DURATION && Object.keys(currentPrices).length > 0) {
+      return; // Use cached data
+    }
 
     setIsLoadingPrices(true);
     setPriceFetchError(null);
     const ids = holdings.map(holding => holding.id).join(',');
+    
     try {
       const response = await axios.get(
         `https://api.coingecko.com/api/v3/coins/markets`,
@@ -91,14 +107,29 @@ const Portfolio = () => {
         }
       );
       const prices = response.data.reduce((acc, coin) => {
-        acc[coin.id] = { usd: coin.current_price, price_change_percentage_24h: coin.price_change_percentage_24h };
+        acc[coin.id] = { 
+          usd: coin.current_price, 
+          price_change_percentage_24h: coin.price_change_percentage_24h 
+        };
         return acc;
       }, {});
       setCurrentPrices(prices);
+      setLastFetchTime(now);
+      setRetryCount(0); // Reset retry count on success
     } catch (error) {
       console.error('Error fetching current prices:', error);
-      setPriceFetchError('Failed to fetch current prices.');
-      setCurrentPrices({}); // Clear prices on error to indicate data might be stale
+      
+      // Handle rate limiting
+      if (error.response?.status === 429 && retryCount < MAX_RETRIES) {
+        setRetryCount(prev => prev + 1);
+        setTimeout(() => {
+          fetchCurrentPortfolioData();
+        }, RETRY_DELAY * retryCount); // Exponential backoff
+        return;
+      }
+      
+      setPriceFetchError('Failed to fetch current prices. Please try again later.');
+      setCurrentPrices({});
     } finally {
       setIsLoadingPrices(false);
     }
@@ -107,16 +138,41 @@ const Portfolio = () => {
   // Effect to trigger initial data fetch when holdings change
   useEffect(() => {
     fetchCurrentPortfolioData();
-  }, [holdings]); // Depend on holdings to refetch when portfolio changes
+  }, [holdings]);
 
+  // Add periodic refresh
+  useEffect(() => {
+    const interval = setInterval(() => {
+      fetchCurrentPortfolioData();
+    }, CACHE_DURATION);
+
+    return () => clearInterval(interval);
+  }, []);
 
   const handleAddCrypto = (newHolding) => {
-    setHoldings([...holdings, newHolding]);
+    // Add a unique identifier to the holding
+    const holdingWithId = {
+      ...newHolding,
+      holdingId: `${newHolding.id}-${Date.now()}` // Create unique ID using timestamp
+    };
+    setHoldings([...holdings, holdingWithId]);
+
+    // Add the current price to our prices state immediately
+    setCurrentPrices(prev => ({
+      ...prev,
+      [newHolding.id]: {
+        usd: newHolding.purchasePrice, // Use the purchase price as initial current price
+        price_change_percentage_24h: 0 // We don't have 24h change yet
+      }
+    }));
   };
 
-  const handleRemoveCrypto = (id, name) => {
-    if (window.confirm(`Are you sure you want to remove ${name} from your portfolio?`)) {
-      setHoldings(holdings.filter(holding => holding.id !== id));
+  const handleRemoveCrypto = (holdingId, name) => {
+    const holding = holdings.find(h => h.holdingId === holdingId);
+    const confirmMessage = `Are you sure you want to remove this ${name} purchase (${holding.amount} ${holding.symbol.toUpperCase()}, bought on ${formatDate(holding.purchaseDate)}) from your portfolio?`;
+    
+    if (window.confirm(confirmMessage)) {
+      setHoldings(holdings.filter(holding => holding.holdingId !== holdingId));
     }
   };
 
@@ -144,6 +200,12 @@ const Portfolio = () => {
       amount: profitLoss,
       percentage: percentageChange
     };
+  };
+
+  const handleEditCrypto = (updatedHolding) => {
+    setHoldings(holdings.map(holding => 
+      holding.holdingId === updatedHolding.holdingId ? updatedHolding : holding
+    ));
   };
 
   return (
@@ -252,7 +314,10 @@ const Portfolio = () => {
                             {holding.amount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 8 })}
                           </td>
                            <td className="px-6 py-4 whitespace-nowrap text-right text-sm text-gray-900 dark:text-white">
-                            {currentPrice ? `$${currentPrice.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : 'Loading...'}
+                            {currentPrice ? 
+                              `$${currentPrice.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : 
+                              isLoadingPrices ? 'Loading...' : '---'
+                            }
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-right text-sm text-gray-500 dark:text-gray-400">
                             {holding.purchaseDate ? formatDate(holding.purchaseDate) : 'N/A'}
@@ -264,12 +329,23 @@ const Portfolio = () => {
                             {profitLoss ? `${profitLoss.percentage >= 0 ? '+' : ''}${profitLoss.percentage.toFixed(2)}%` : '---'}
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-right text-sm">
-                            <button
-                              onClick={() => handleRemoveCrypto(holding.id, holding.name)}
-                              className="text-red-500 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300"
-                            >
-                              Remove
-                            </button>
+                            <div className="flex justify-end space-x-3">
+                              <button
+                                onClick={() => {
+                                  setSelectedHolding(holding);
+                                  setIsEditModalOpen(true);
+                                }}
+                                className="text-blue-500 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300"
+                              >
+                                Edit
+                              </button>
+                              <button
+                                onClick={() => handleRemoveCrypto(holding.holdingId, holding.name)}
+                                className="text-red-500 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300"
+                              >
+                                Remove
+                              </button>
+                            </div>
                           </td>
                         </tr>
                       );
@@ -285,6 +361,16 @@ const Portfolio = () => {
           isOpen={isModalOpen}
           onClose={() => setIsModalOpen(false)}
           onAdd={handleAddCrypto}
+        />
+
+        <EditCryptoModal
+          isOpen={isEditModalOpen}
+          onClose={() => {
+            setIsEditModalOpen(false);
+            setSelectedHolding(null);
+          }}
+          onEdit={handleEditCrypto}
+          holding={selectedHolding}
         />
       </div>
     </div>
