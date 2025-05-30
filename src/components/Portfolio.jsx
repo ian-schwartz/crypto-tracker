@@ -34,6 +34,10 @@ const Portfolio = () => {
   const [selectedHolding, setSelectedHolding] = useState(null);
   const [lastFetchTime, setLastFetchTime] = useState(0);
   const [retryCount, setRetryCount] = useState(0);
+  const [displayMode, setDisplayMode] = useState({
+    '24h': 'percentage', // 'percentage' or 'usd'
+    'allTime': 'percentage'
+  });
 
   // Save portfolio data to localStorage whenever it changes
   useEffect(() => {
@@ -208,30 +212,139 @@ const Portfolio = () => {
     ));
   };
 
+  const calculatePortfolioPerformance = () => {
+    if (holdings.length === 0) return null;
+
+    const totalPurchaseValue = holdings.reduce((sum, holding) => {
+      return sum + (holding.amount * holding.purchasePrice);
+    }, 0);
+
+    const totalCurrentValue = holdings.reduce((sum, holding) => {
+      const currentPrice = currentPrices[holding.id]?.usd;
+      if (currentPrice) {
+        return sum + (holding.amount * currentPrice);
+      }
+      return sum + (holding.amount * holding.purchasePrice); // Fallback to purchase price if current price not available
+    }, 0);
+
+    // Check for valid numbers
+    if (isNaN(totalPurchaseValue) || isNaN(totalCurrentValue) || totalPurchaseValue === 0) {
+      return null;
+    }
+
+    const profitLoss = totalCurrentValue - totalPurchaseValue;
+    const percentageChange = (profitLoss / totalPurchaseValue) * 100;
+
+    // Check for valid results
+    if (isNaN(profitLoss) || isNaN(percentageChange)) {
+      return null;
+    }
+
+    return {
+      amount: profitLoss,
+      percentage: percentageChange
+    };
+  };
+
+  const toggleDisplayMode = (metric) => {
+    setDisplayMode(prev => ({
+      ...prev,
+      [metric]: prev[metric] === 'percentage' ? 'usd' : 'percentage'
+    }));
+  };
+
+  const formatValue = (value, isPercentage) => {
+    if (isPercentage) {
+      return `${value >= 0 ? '+' : ''}${value.toFixed(2)}%`;
+    }
+    return `${value >= 0 ? '+' : ''}$${Math.abs(value).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  };
+
   return (
     <div>
       <div className="container mx-auto px-4 py-24">
         <div className="flex justify-center mb-8 pt-0">
-          <div className="text-center">
-            <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
-              Total Value
-            </h1>
-            <div className="flex items-center justify-center gap-2">
-              <p className="text-4xl font-bold text-blue-500">
-                ${totalValue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-              </p>
-              {isLoadingPrices && (
-                <div className="animate-spin rounded-full h-4 w-4 border-t-2 border-b-2 border-blue-500"></div>
+          <div className="w-full max-w-2xl">
+            <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6">
+              <div className="text-center mb-6">
+                <h1 className="text-2xl font-semibold text-gray-600 dark:text-gray-400 mb-2">
+                  Portfolio Value
+                </h1>
+                <div className="flex items-center justify-center gap-2">
+                  <p className="text-4xl font-bold text-gray-900 dark:text-white">
+                    ${totalValue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                  </p>
+                  {isLoadingPrices && (
+                    <div className="animate-spin rounded-full h-4 w-4 border-t-2 border-b-2 border-blue-500"></div>
+                  )}
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                {(() => {
+                  const performance = calculatePortfolioPerformance();
+                  return (
+                    <>
+                      <div 
+                        className="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-4 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                        onClick={() => toggleDisplayMode('24h')}
+                      >
+                        <p className="text-sm text-gray-500 dark:text-gray-400 mb-1">24h Change</p>
+                        {portfolio24hChange !== null ? (
+                          <div className="flex items-baseline gap-2">
+                            <p className={`text-xl font-semibold ${portfolio24hChange >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
+                              {displayMode['24h'] === 'percentage' 
+                                ? formatValue(portfolio24hChange, true)
+                                : formatValue(portfolio24hChange * totalValue / 100, false)
+                              }
+                            </p>
+                            <p className="text-sm text-gray-500 dark:text-gray-400">
+                              {portfolio24hChange >= 0 ? '↑' : '↓'}
+                            </p>
+                          </div>
+                        ) : (
+                          <p className="text-gray-400 dark:text-gray-500">---</p>
+                        )}
+                      </div>
+
+                      <div 
+                        className="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-4 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                        onClick={() => toggleDisplayMode('allTime')}
+                      >
+                        <p className="text-sm text-gray-500 dark:text-gray-400 mb-1">All Time</p>
+                        {performance ? (
+                          <div className="flex items-baseline gap-2">
+                            <p className={`text-xl font-semibold ${performance.percentage >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
+                              {displayMode['allTime'] === 'percentage'
+                                ? formatValue(performance.percentage, true)
+                                : formatValue(performance.amount, false)
+                              }
+                            </p>
+                            <p className="text-sm text-gray-500 dark:text-gray-400">
+                              {performance.percentage >= 0 ? '↑' : '↓'}
+                            </p>
+                          </div>
+                        ) : (
+                          <p className="text-gray-400 dark:text-gray-500">---</p>
+                        )}
+                      </div>
+                    </>
+                  );
+                })()}
+              </div>
+
+              {performance && !isNaN(performance.amount) && (
+                <div className="mt-4 text-center">
+                  <p className="text-sm text-gray-500 dark:text-gray-400">
+                    Click on either card to toggle between percentage and USD values
+                  </p>
+                </div>
+              )}
+
+              {priceFetchError && (
+                <p className="text-sm text-red-500 dark:text-red-400 mt-4 text-center">{priceFetchError}</p>
               )}
             </div>
-            {portfolio24hChange !== null && (
-              <p className={`text-lg font-semibold ${portfolio24hChange >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
-                24h Change: {portfolio24hChange >= 0 ? '+' : ''}{portfolio24hChange.toFixed(2)}%
-              </p>
-            )}
-            {priceFetchError && (
-              <p className="text-sm text-red-500 dark:text-red-400 mt-2">{priceFetchError}</p>
-            )}
           </div>
         </div>
 
